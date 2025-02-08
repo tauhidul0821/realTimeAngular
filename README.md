@@ -179,3 +179,148 @@ Using **Socket.IO** with **Node.js and MongoDB**, we ensure that **any change to
 
 ---
 Let me know if you have any questions! 😊
+
+
+
+# 📍 Real-Time Location Tracking in Angular Admin Panel
+
+## 🚀 Overview
+This guide explains how to implement **real-time delivery tracking** in an **Angular admin panel**, showing both:
+- **Customer's house location** (fixed)
+- **Delivery person's live location** (updates in real-time)
+
+## 🛠️ Technologies Used
+- **Angular** (Frontend Framework)
+- **Google Maps API** (Display locations)
+- **WebSockets (Socket.io)** (Real-time updates)
+- **Geolocation API** (Track driver location)
+- **Node.js + Express** (Backend for WebSockets)
+
+---
+
+## 📌 1. Install Dependencies
+
+### 🔹 Install Google Maps for Angular
+```sh
+npm install @angular/google-maps
+```
+
+Enable **Maps JavaScript API** in [Google Cloud Console](https://console.cloud.google.com/).
+
+### 🔹 Install Socket.io Client
+```sh
+npm install socket.io-client
+```
+
+---
+
+## 📌 2. Create Angular Service for Location Updates
+
+**`location.service.ts`**
+```typescript
+import { Injectable } from '@angular/core';
+import { io } from 'socket.io-client';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class LocationService {
+  private socket = io('https://yourserver.com'); // Change to your backend URL
+
+  sendDriverLocation(driverId: string, lat: number, lng: number) {
+    this.socket.emit('driverLocation', { driverId, lat, lng });
+  }
+
+  getDriverLocation(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket.on('updateLocation', (data) => {
+        observer.next(data);
+      });
+    });
+  }
+}
+```
+
+---
+
+## 📌 3. Display Google Map in Angular Admin Panel
+
+**`admin-map.component.ts`**
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { LocationService } from '../services/location.service';
+
+@Component({
+  selector: 'app-admin-map',
+  templateUrl: './admin-map.component.html',
+  styleUrls: ['./admin-map.component.css']
+})
+export class AdminMapComponent implements OnInit {
+  customerLocation = { lat: 40.7128, lng: -74.0060 }; // Example: New York
+  driverLocation = { lat: 0, lng: 0 };
+  
+  constructor(private locationService: LocationService) {}
+
+  ngOnInit(): void {
+    this.locationService.getDriverLocation().subscribe((data) => {
+      this.driverLocation = { lat: data.lat, lng: data.lng };
+    });
+  }
+}
+```
+
+---
+
+## 📌 4. Show Google Maps in Admin Panel UI
+
+**`admin-map.component.html`**
+```html
+<google-map [center]="customerLocation" [zoom]="14" height="400px" width="100%">
+  <map-marker [position]="customerLocation" title="Customer House"></map-marker>
+  <map-marker [position]="driverLocation" title="Delivery Man" icon="https://maps.google.com/mapfiles/ms/icons/blue-dot.png"></map-marker>
+</google-map>
+```
+
+---
+
+## 📌 5. Backend (Node.js + Socket.io) for Real-Time Updates
+
+**`server.js`**
+```javascript
+const io = require("socket.io")(3000, {
+  cors: {
+    origin: "*",
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("New Admin Connected");
+
+  socket.on("driverLocation", (data) => {
+    console.log("Driver Location:", data);
+    io.emit("updateLocation", data); // Broadcast to all admins
+  });
+});
+```
+
+---
+
+## 🎯 Features You Get
+✅ **Real-time delivery tracking** on the **admin panel**  
+✅ **Customer house location** is fixed  
+✅ **Driver’s live location** updates automatically  
+✅ **WebSockets (fast, no delays)**  
+✅ **Google Maps for accurate visualization**  
+
+---
+
+## 📌 Future Enhancements
+- **🚗 Route Display**: Show the path from the driver to the customer.
+- **⏳ ETA Calculation**: Predict delivery time.
+- **📍 Multiple Deliveries**: Track multiple drivers at once.
+
+---
+
+### 🎉 Done! Your Angular admin panel now has real-time delivery tracking! 🚀
+
